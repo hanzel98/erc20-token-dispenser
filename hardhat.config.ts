@@ -24,20 +24,12 @@ const config: HardhatUserConfig = {
             enabled: true,
             runs: 2000,
           },
-          evmVersion: "london",
         },
       },
     ],
   },
 
   defaultNetwork: "hardhat",
-
-  namedAccounts: {
-    deployer: {
-      default: 0,
-    },
-  },
-
   networks: {
     goerli: {
       url:

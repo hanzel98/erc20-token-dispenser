@@ -13,3 +13,7 @@ The system must provide a mechanism to distribute the tokens monthly. This could
 ### Math validation
 
 ![MathValidation](MathValidation.png)
+
+### Formula validation for years greater than 4
+
+![Formula](FormulaValidation.png)

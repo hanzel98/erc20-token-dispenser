@@ -13,9 +13,10 @@
     {
       "files": "*.sol",
       "options": {
-        "printWidth": 80,
         "tabWidth": 4,
         "useTabs": false,
+        "semi": false,
+        "printWidth": 100,
         "singleQuote": false,
         "bracketSpacing": true
       }
