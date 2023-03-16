@@ -15,7 +15,7 @@ contract TokenDispenser is Ownable {
     error PaymentFailed();
 
     uint256 public constant ONE_YEAR = 365 days;
-    IERC20 private immutable token;
+    IERC20 public immutable token;
     uint256 public immutable monthlyMin;
     uint256 public immutable monthlyMax;
     uint256 public immutable start;
@@ -29,7 +29,7 @@ contract TokenDispenser is Ownable {
     constructor(IERC20 _token, uint256 _monthlyMin, uint256 _monthlyMax, address _receiver) {
         if (address(_token) == address(0)) revert InvalidToken();
         if (_monthlyMax == 0) revert InvalidMontlyMax();
-        if (receiver == address(0)) revert InvalidReceiver();
+        if (_receiver == address(0)) revert InvalidReceiver();
 
         token = _token;
         monthlyMin = _monthlyMin;
@@ -64,8 +64,8 @@ contract TokenDispenser is Ownable {
             if (claimable < (_amount + claimedThisMonth)) revert MonthlyClaimTooHigh();
         }
 
-        if (!token.transfer(msg.sender, _amount)) revert PaymentFailed();
         emit Claimed(_amount);
+        if (!token.transfer(msg.sender, _amount)) revert PaymentFailed();
     }
 
     function getContractBalance() external view returns (uint256) {
