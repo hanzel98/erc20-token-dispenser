@@ -6,15 +6,16 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract TokenDispenser is Ownable {
-    IERC20 private immutable token;
-    uint256 public monthlyMin;
-    uint256 public monthlyMax;
-    uint256 public start;
-    address public receiver;
-
     error InvalidToken();
     error InvalidReceiver();
     error InvalidMontlyMax();
+
+    IERC20 private immutable token;
+    uint256 public immutable monthlyMin;
+    uint256 public immutable monthlyMax;
+    uint256 public immutable start;
+    address public receiver;
+
     event ReceiverChanged(address oldReceiver, address newReceiver);
 
     constructor(
@@ -36,8 +37,21 @@ contract TokenDispenser is Ownable {
         receiver = _receiver;
     }
 
+    function claim(uint256 _amount) external {
+        // TODO: Steps
+        // 1- Verify that the claimable amount is equal or greater than the input amount
+        // 2- Discount any previously claimed amounts from the claimable amount
+        // 3- Add the new claimed to the previous claimed amount of the month
+        // 4- Transfer the final amount of tokens to the user
+    }
+
+    function getContractBalance() external view returns (uint256) {
+        return token.balanceOf(address(this));
+    }
+
     function getClaimableAmount() public view returns (uint256) {
         uint256 amount = _getClaimableAmount();
+        assert(monthlyMax >= amount);
         if (amount > monthlyMin) return amount;
         return token.balanceOf(address(this));
     }
@@ -45,9 +59,6 @@ contract TokenDispenser is Ownable {
     function _getClaimableAmount() private view returns (uint256) {
         uint256 year = 365 days;
         uint256 currentYear = (block.timestamp - start) / year;
-        // TODO: Delete if not needed (Just in case)
-        // if (currentYear == 0) return 0;
-        // if (currentYear == 1) return (monthlyMax * 10) / 100;
         if (currentYear <= 1) return (monthlyMax * 10) / 100;
         if (currentYear < 5) {
             uint256 percentage = (currentYear == 2 ? 25 : (currentYear == 3 ? 50 : 100));
