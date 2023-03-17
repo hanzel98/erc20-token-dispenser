@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity 0.8.10;
+pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 contract TokenDispenser is Ownable {
     error InvalidToken();
@@ -13,8 +14,10 @@ contract TokenDispenser is Ownable {
     error MonthlyClaimTooHigh();
     error NoTokensLeftToDistribute();
     error PaymentFailed();
+    error InvalidClaimCaller();
 
     uint256 public constant ONE_YEAR = 365 days;
+    uint256 public constant ONE_MONTH = ONE_YEAR / 12;
     IERC20 public immutable token;
     uint256 public immutable monthlyMin;
     uint256 public immutable monthlyMax;
@@ -40,52 +43,63 @@ contract TokenDispenser is Ownable {
     }
 
     function claim(uint256 _amount) external {
-        // Steps
-        // 1- Verify that the claimable amount is equal or greater than the input amount
-        // 2- Discount any previously claimed amounts from the claimable amount
-        // 3- Add the new claimed to the previous claimed amount of the month
-        // 4- Transfer the final amount of tokens to the user
-        // TODO: Validate if it should count the time from the start not from the previous
+        if (msg.sender != receiver) revert InvalidClaimCaller();
 
-        uint256 elapsedTime = block.timestamp - start;
-        uint256 elapsedMonths = elapsedTime / (ONE_YEAR / 12);
-        if (elapsedMonths == 0) return;
-        uint256 newPeriodStartTime = elapsedMonths * (ONE_YEAR / 12);
+        (uint256 maxTokens, bool isNewMonth) = calculateMaxTokensThisMonth();
+        if (maxTokens == 0) revert NoTokensLeftToDistribute();
+        if (maxTokens < _amount) revert MonthlyClaimTooHigh();
 
-        (uint256 claimable, bool isLeftOver) = calculateMaxTokensThisMonth();
-        if (claimable == 0) revert NoTokensLeftToDistribute();
-
-        bool isNewMonth = newPeriodStartTime > lastClaimedPeriodStartTime;
         if (isNewMonth) {
+            (, , uint256 newPeriodStartTime) = getTimes();
             lastClaimedPeriodStartTime = newPeriodStartTime;
-            if (isLeftOver) _amount = claimable;
             claimedThisMonth = _amount;
-        } else {
-            if (claimable < (_amount + claimedThisMonth)) revert MonthlyClaimTooHigh();
         }
 
         emit Claimed(_amount);
         if (!token.transfer(msg.sender, _amount)) revert PaymentFailed();
     }
 
+    function getTimes()
+        public
+        view
+        returns (uint256 currentYear, uint256 claimableMonth, uint256 newPeriodStartTime)
+    {
+        // TODO: I could change "claimableMonth" to currentMonth
+        uint256 elapsedTime = block.timestamp - start;
+        // console.log("elapsedTime %s", elapsedTime);
+        currentYear = (elapsedTime / ONE_YEAR) + 1;
+        console.log("currentYear %s", currentYear);
+        claimableMonth = (elapsedTime / ONE_MONTH) + 1;
+        console.log("claimableMonth %s", claimableMonth);
+        newPeriodStartTime = start + (claimableMonth * ONE_MONTH);
+    }
+
     function getContractBalance() external view returns (uint256) {
         return token.balanceOf(address(this));
     }
 
-    function calculateMaxTokensThisMonth() public view returns (uint256 amount, bool isLeftOver) {
-        amount = _getClaimableAmount();
+    function calculateMaxTokensThisMonth()
+        public
+        view
+        returns (uint256 maxTokens, bool isNewMonth)
+    {
+        uint256 amount = _getClaimableAmount();
+
         assert(monthlyMax >= amount);
-        if (amount <= monthlyMin) {
-            amount = token.balanceOf(address(this));
-            isLeftOver = true;
-        }
+        if (amount <= monthlyMin) amount = token.balanceOf(address(this));
+
+        (, , uint256 newPeriodStartTime) = getTimes();
+        isNewMonth = newPeriodStartTime > lastClaimedPeriodStartTime;
+        if (isNewMonth) maxTokens = amount;
+        else maxTokens = amount - claimedThisMonth;
     }
 
     function _getClaimableAmount() private view returns (uint256) {
-        uint256 currentYear = (block.timestamp - start) / ONE_YEAR;
-        if (currentYear <= 1) return (monthlyMax * 10) / 100;
+        (uint256 currentYear, , ) = getTimes();
         if (currentYear < 5) {
-            uint256 percentage = (currentYear == 2 ? 25 : (currentYear == 3 ? 50 : 100));
+            uint256 percentage = currentYear == 1
+                ? 10
+                : (currentYear == 2 ? 25 : (currentYear == 3 ? 50 : 100));
             return (monthlyMax * percentage) / 100;
         }
         bool modulo4IsZero = ((100 * currentYear) / 4) % 100 == 0;
