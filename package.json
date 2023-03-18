@@ -8,8 +8,8 @@
     "compile": "yarn clean && npx hardhat compile",
     "size": "npx hardhat size-contracts",
     "test": "hardhat test --bail",
+    "coverage": "npx hardhat coverage",
     "format": "prettier --config .prettierrc --write \"**/*.*.{ts,js}\" \"contracts/**/*.sol\"",
-    "format:file": "prettier --config .prettierrc --write ",
     "deploy:goerli": "npx hardhat run --network goerli scripts/deploy.ts"
   },
   "devDependencies": {
@@ -31,7 +31,7 @@
     "hardhat": "^2.12.2",
     "hardhat-dependency-compiler": "^1.1.3",
     "hardhat-deploy-ethers": "0.3.0-beta.13",
-    "hardhat-gas-reporter": "^1.0.8",
+    "hardhat-gas-reporter": "^1.0.9",
     "prettier": "^2.8.1",
     "prettier-plugin-solidity": "^1.0.0",
     "solhint": "^3.3.7",

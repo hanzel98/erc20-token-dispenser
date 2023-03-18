@@ -8,6 +8,8 @@ import "hardhat-dependency-compiler";
 
 import "@nomiclabs/hardhat-ethers";
 
+import "hardhat-gas-reporter";
+
 import * as dotenv from "dotenv";
 
 import "solidity-coverage";
@@ -50,6 +52,13 @@ const config: HardhatUserConfig = {
 
   mocha: {
     timeout: 100_000_000,
+  },
+
+  gasReporter: {
+    enabled: true,
+    currency: "USD",
+    gasPrice: 21,
+    coinmarketcap: process.env.COIN_MARKET_CAP_API_KEY,
   },
 };
 
