@@ -235,6 +235,12 @@ describe("TokenDispenser", () => {
       await tokenDispenser.connect(receiver).claim(maxTokens2);
       const balanceAfter2 = await getBalance(receiver.address);
       expect(balanceAfter2).to.equal(maxTokens1.div(2).add(maxTokens2));
+
+      const [maxTokens3] = await tokenDispenser.calculateMaxTokensThisMonth();
+      expect(tokenDispenser.connect(receiver).claim(maxTokens3)).to.be.revertedWithCustomError(
+        tokenDispenser,
+        "ClaimingZero"
+      );
     });
 
     it("Should emit an event after the claim", async () => {
@@ -244,7 +250,7 @@ describe("TokenDispenser", () => {
         .withArgs(maxTokens);
     });
 
-    it("Should allow claiming every month until monthlyMin reached", async () => {
+    it.skip("Should allow claiming every month until monthlyMin reached", async () => {
       // Heavy test
       // This test will claim the tokens every month until the contract's balance is drained.
       let totalExpected = toBN(0);

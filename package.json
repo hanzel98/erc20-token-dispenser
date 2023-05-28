@@ -7,7 +7,7 @@
     "clean": "npx hardhat clean",
     "compile": "yarn clean && npx hardhat compile",
     "size": "npx hardhat size-contracts",
-    "test": "hardhat test --bail",
+    "test": "hardhat test",
     "coverage": "npx hardhat coverage",
     "format": "prettier --config .prettierrc --write \"**/*.*.{ts,js}\" \"contracts/**/*.sol\"",
     "deploy:goerli": "npx hardhat run --network goerli scripts/deploy.ts"

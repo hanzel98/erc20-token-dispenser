@@ -9,6 +9,7 @@ contract TokenDispenser is Ownable {
     error InvalidToken();
     error InvalidReceiver();
     error InvalidMontlyMax();
+    error ClaimingZero();
     error MonthlyClaimTooHigh();
     error NoTokensLeftToDistribute();
     error PaymentFailed();
@@ -63,6 +64,7 @@ contract TokenDispenser is Ownable {
     /// @dev If the monthlyMin amount of tokens is reached, the contract will transfer the leftover tokens
     /// @param amount_ Amount of tokens to claim, recommended to first call calculateMaxTokensThisMonth()
     function claim(uint256 amount_) external {
+        if (amount_ == 0) revert ClaimingZero();
         if (msg.sender != receiver) revert InvalidClaimCaller();
 
         (uint256 maxTokens, bool isNewMonth) = calculateMaxTokensThisMonth();
@@ -73,6 +75,8 @@ contract TokenDispenser is Ownable {
             (, , uint256 newPeriodStartTime) = getTimes();
             lastClaimedPeriodStartTime = newPeriodStartTime;
             claimedThisMonth = amount_;
+        } else {
+            claimedThisMonth += amount_;
         }
 
         emit Claimed(amount_);
@@ -109,11 +113,10 @@ contract TokenDispenser is Ownable {
         returns (uint256 maxTokens, bool isNewMonth)
     {
         uint256 amount = _getClaimableAmount();
-
         assert(monthlyMax >= amount);
         if (amount <= monthlyMin) amount = token.balanceOf(address(this));
-
         (, , uint256 newPeriodStartTime) = getTimes();
+
         isNewMonth = newPeriodStartTime > lastClaimedPeriodStartTime;
         if (isNewMonth) maxTokens = amount;
         else maxTokens = amount - claimedThisMonth;
